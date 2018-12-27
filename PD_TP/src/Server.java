@@ -6,18 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-/**
- *
- * @author pedro
- */
 public class Server {
 
     public static final int TIMEOUT = 5; //segundos
@@ -72,6 +61,7 @@ public class Server {
                     }
                     if (initData != null) {
                         DataBaseConnect.addClient(initData);
+                        new ProcessClient(socketToClient).start();
                     }
 
                 } catch (IOException e) {
@@ -99,5 +89,25 @@ public class Server {
             } catch (IOException e) {
             }
         }
+    }
+}
+
+class ProcessClient extends Thread {
+
+    public Socket socketToClient;
+    public static final int TIMEOUT = 5; //segundos
+
+    public ProcessClient(Socket socketToClient) {
+        this.socketToClient = socketToClient;
+    }
+
+    @Override
+    public void run() {
+
+        try {
+            socketToClient.close();
+        } catch (IOException e) {
+        }
+
     }
 }
