@@ -1,0 +1,88 @@
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+/**
+ *
+ * @author pedro
+ */
+public class Server {
+
+    public static final int TIMEOUT = 5; //segundos
+
+    public static void main(String[] args) {
+        InetAddress Addr;
+        int Port;
+        ServerSocket serverSocket = null;
+        boolean toQuit = false;
+        ObjectInputStream in;
+        Socket socketToClient;
+        if (args.length != 2) {
+            System.out.println("Sintaxe: java Server Server_addr Server_port");
+            return;
+        }
+        try {
+            Addr = InetAddress.getByName(args[0]);
+            Port = Integer.parseInt(args[1]);
+            serverSocket = new ServerSocket(Port);
+            serverSocket.setSoTimeout(TIMEOUT);
+        } catch (UnknownHostException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+
+        /*Recebe Clientes
+        *Espera receber os dados do cliente
+        *Guarda a informação do cliente + os ficheiros dele na base de dados
+         */
+        try {
+
+            while (!toQuit) {
+
+                try {
+
+                    socketToClient = serverSocket.accept();
+                    //Recebe um Objecto da Class InitCliente e adiciona o Cliente a Base de dados
+                    in = new ObjectInputStream(socketToClient.getInputStream());
+                    Object oData = in.readObject();
+                    InitClient initData;
+                    if (oData instanceof InitClient) {
+                        initData = (InitClient) oData;
+                    }
+                    //Database.AddClient(initData);
+
+                } catch (IOException e) {
+                    if (toQuit) {
+                        return;
+                    }
+                    System.out.println("Ocorreu uma excepcao no socket enquanto aguardava por um pedido de ligação: \n" + e);
+                    System.out.println("O servidor vai terminar...");
+                    return;
+                } catch (ClassNotFoundException ex) {
+                    System.out.println("Erro - " + ex);
+                    System.exit(1);
+                }
+            } //while(!toQuit)
+
+        } finally {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+}
