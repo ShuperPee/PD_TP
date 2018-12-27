@@ -1,11 +1,16 @@
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
 
@@ -28,8 +33,8 @@ public class Server {
             Port = Integer.parseInt(args[1]);
             serverSocket = new ServerSocket(Port);
             serverSocket.setSoTimeout(TIMEOUT);
-
             new DataBaseConnect();
+            new ProcessUDPClients().start();
         } catch (UnknownHostException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -40,7 +45,6 @@ public class Server {
             System.out.println("Erro - " + ex);
             System.exit(1);
         }
-
         /*Recebe Clientes
         *Espera receber os dados do cliente
         *Guarda a informação do cliente + os ficheiros dele na base de dados
@@ -61,7 +65,7 @@ public class Server {
                     }
                     if (initData != null) {
                         DataBaseConnect.addClient(initData);
-                        new ProcessClient(socketToClient).start();
+                        new ProcessTCPClient(socketToClient).start();
                     }
 
                 } catch (IOException e) {
@@ -92,22 +96,73 @@ public class Server {
     }
 }
 
-class ProcessClient extends Thread {
+class ProcessUDPClients extends Thread {
 
-    public Socket socketToClient;
+    public DatagramSocket socket;
+    public List<DatagramPacket> packets;
+    public List<InetAddress> ClientsAddr;
     public static final int TIMEOUT = 5; //segundos
+    public static final int PORT = 5000;
+    public static final String DATA = "Oi";
 
-    public ProcessClient(Socket socketToClient) {
-        this.socketToClient = socketToClient;
+    public ProcessUDPClients() throws SocketException {
+        this.packets = new ArrayList<>();
+        this.ClientsAddr = new ArrayList<>();
+        this.socket = new DatagramSocket(PORT);
+        socket.setSoTimeout(TIMEOUT * 1000);
     }
 
     @Override
     public void run() {
 
-        try {
-            socketToClient.close();
-        } catch (IOException e) {
+        while (true) {
+            //inicia todos os cliente em base de dados
+            try {
+                ClientsAddr.clear();
+                packets.clear();
+                for (String str : DataBaseConnect.getAllClientsAddr()) {
+                    ClientsAddr.add(InetAddress.getByName(str));
+                }
+                for (InetAddress addr : ClientsAddr) {
+                    packets.add(new DatagramPacket(DATA.getBytes(), DATA.length(), addr, PORT));
+                }
+            } catch (Exception ex) {
+                System.out.println("Erro - " + ex);
+                System.exit(1);
+            }
+
+            for (DatagramPacket packet : packets) {
+                try {
+                    socket.send(packet);
+                    socket.receive(packet);
+                    //msg = new String(pkt.getData(), 0, pkt.getLength());
+                    //Conseguiu, dar reset, tentativas = 5
+                } catch (IOException ex) {
+                    //Não consegui,tentativas -=1
+                    //Se chegar a 5 desativar cliente e seus ficheiros
+                }
+            }
         }
 
+    }
+}
+
+class ProcessTCPClient extends Thread {
+
+    public Socket socketToClient;
+    public static final int TIMEOUT = 5; //segundos
+
+    public ProcessTCPClient(Socket socketToClient) {
+        this.socketToClient = socketToClient;
+    }
+
+    @Override
+    public void run() {
+        try {
+            socketToClient.close();
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
     }
 }

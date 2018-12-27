@@ -1,14 +1,11 @@
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 public class DataBaseConnect {
@@ -28,11 +25,62 @@ public class DataBaseConnect {
     }
 
     /**
-     * obterTarefas - Se tiver historico(1), devolve todas as tarefas. - Senão
-     * tiver historico(0), devolve só as tarefas entregues.
+     * getAllClientsAddr
+     *
+     * @return ClientsAddrs - uma lista de Addrs dos clientes.
+     * @throws java.sql.SQLException
+     */
+    public static List<String> getAllClientsAddr() throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<String> ClientsAddrs = new ArrayList<>();
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT * FROM clients";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                ClientsAddrs.add(rs.getString("client_addr"));
+                if (ClientsAddrs.isEmpty()) {
+                    //Error
+                }
+            }
+            rs.close();
+            return ClientsAddrs;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getClientAddr
      *
      * @param file - identifica o ficheiro.
-     * @return uma lista de tarefas.
+     * @return clienteAddr - Addr de um cliente que contem o ficheiro
      * @throws java.sql.SQLException
      */
     public static String getClientAddr(String file) throws SQLException, Exception {
@@ -132,6 +180,14 @@ public class DataBaseConnect {
         }
     }
 
+    /**
+     * getClientFiles
+     *
+     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
+     * @return files - Lista dos nomes dos ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
     public static List<String> getClientFiles(String clientAddr) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
