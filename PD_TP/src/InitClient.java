@@ -12,4 +12,16 @@ class InitClient implements Serializable {
         this.ClientAddr = ClientAddr;
         this.ficheiros = ficheiros;
     }
+
+    public String toStringSQL() {
+        return ClientAddr;
+    }
+
+    public String getClientAddr() {
+        return ClientAddr;
+    }
+
+    public List<String> getFicheiros() {
+        return ficheiros;
+    }
 }
