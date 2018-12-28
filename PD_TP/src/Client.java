@@ -6,6 +6,8 @@ import java.net.UnknownHostException;
 
 public class Client {
 
+    public static final String DATA = "ack";
+
     public static void main(String[] args) {
         InetAddress Addr;
         int Port;

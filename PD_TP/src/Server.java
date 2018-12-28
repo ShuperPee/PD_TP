@@ -104,7 +104,7 @@ class ProcessUDPClients extends Thread {
     public List<InetAddress> ClientsAddr;
     public static final int TIMEOUT = 5; //segundos
     public static final int PORT = 5000;
-    public static final String DATA = "Oi";
+    public static final String DATA = "keepalive";
     private DataBaseConnect DataBase;
 
     public ProcessUDPClients(DataBaseConnect DataBase) throws SocketException {
