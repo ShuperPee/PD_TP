@@ -12,16 +12,23 @@ public class DataBaseConnect {
 
     // Nome do Driver JDBC e Endereco URL da Base de Dados
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    static final String SERVIDOR = "localhost:3306";
+    public String SERVIDOR;
     static final String NOME_BD = "pd_1819";
-    static final String URL_BD = "jdbc:mysql://" + SERVIDOR + "/" + NOME_BD;
+    public String URL_BD;
     // Credenciais da Base de Dados
     static final String UTILIZADOR = "root";
     static final String SENHA = "pd-1819";
 
-    public DataBaseConnect() throws ClassNotFoundException {
+    /*dataBaseAddr deve ser assim
+    * = "localhost:3306/NOME_BD";
+    * = "jdbc:mysql://" + SERVIDOR + "/" + NOME_BD;
+     */
+    public DataBaseConnect(String dataBaseAddr) throws ClassNotFoundException {
         //Registar o Driver JDBC
+        SERVIDOR = dataBaseAddr;
+        URL_BD = "jdbc:mysql://" + SERVIDOR;
         Class.forName(JDBC_DRIVER);
+
     }
 
     /**
@@ -30,7 +37,7 @@ public class DataBaseConnect {
      * @return ClientsAddrs - uma lista de Addrs dos clientes.
      * @throws java.sql.SQLException
      */
-    public static List<String> getAllClientsAddr() throws SQLException, Exception {
+    public List<String> getAllClientsAddr() throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
         List<String> ClientsAddrs = new ArrayList<>();
@@ -83,7 +90,7 @@ public class DataBaseConnect {
      * @return clienteAddr - Addr de um cliente que contem o ficheiro
      * @throws java.sql.SQLException
      */
-    public static String getClientAddr(String file) throws SQLException, Exception {
+    public String getClientAddr(String file) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
         String clientAddr = "";
@@ -139,7 +146,7 @@ public class DataBaseConnect {
      * @throws java.sql.SQLException
      * @throws Exception
      */
-    public static boolean addClient(InitClient newClient) throws SQLException, Exception {
+    public boolean addClient(InitClient newClient) throws SQLException, Exception {
         Connection conn = null;
         PreparedStatement stmt = null;
         try {
@@ -188,7 +195,7 @@ public class DataBaseConnect {
      * @throws java.sql.SQLException
      * @throws Exception
      */
-    public static List<String> getClientFiles(String clientAddr) throws SQLException, Exception {
+    public List<String> getClientFiles(String clientAddr) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
         List<String> files = new ArrayList<>();
