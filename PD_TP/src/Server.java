@@ -24,9 +24,8 @@ public class Server {
         ObjectInputStream in;
         Socket socketToClient;
         InitClient initData = null;
-        DataBaseConnect DataBase = null;
         if (args.length != 2) {
-            System.out.println("Sintaxe: java Server DataBase_addr:port Server_port");
+            System.out.println("Sintaxe: java Server Server_addr Server_port");
             return;
         }
         try {
@@ -34,8 +33,8 @@ public class Server {
             Port = Integer.parseInt(args[1]);
             serverSocket = new ServerSocket(Port);
             serverSocket.setSoTimeout(TIMEOUT);
-            DataBase = new DataBaseConnect(args[0]);
-            new ProcessUDPClients(DataBase).start();
+            new DataBaseConnect();
+            new ProcessUDPClients().start();
         } catch (UnknownHostException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -65,7 +64,7 @@ public class Server {
                         initData = (InitClient) oData;
                     }
                     if (initData != null) {
-                        DataBase.addClient(initData);
+                        DataBaseConnect.addClient(initData);
                         new ProcessTCPClient(socketToClient).start();
                     }
 
@@ -107,10 +106,9 @@ class ProcessUDPClients extends Thread {
     public static final String DATA = "keepalive";
     private DataBaseConnect DataBase;
 
-    public ProcessUDPClients(DataBaseConnect DataBase) throws SocketException {
+    public ProcessUDPClients() throws SocketException {
         this.packets = new ArrayList<>();
         this.ClientsAddr = new ArrayList<>();
-        this.DataBase = DataBase;
         this.socket = new DatagramSocket(PORT);
         socket.setSoTimeout(TIMEOUT * 1000);
     }
@@ -123,7 +121,7 @@ class ProcessUDPClients extends Thread {
             try {
                 ClientsAddr.clear();
                 packets.clear();
-                for (String str : DataBase.getAllClientsAddr()) {
+                for (String str : DataBaseConnect.getAllClientsAddr()) {
                     ClientsAddr.add(InetAddress.getByName(str));
                 }
                 for (InetAddress addr : ClientsAddr) {
