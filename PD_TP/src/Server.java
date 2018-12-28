@@ -24,8 +24,9 @@ public class Server {
         ObjectInputStream in;
         Socket socketToClient;
         InitClient initData = null;
+        DataBaseConnect DataBase = null;
         if (args.length != 2) {
-            System.out.println("Sintaxe: java Server Server_addr Server_port");
+            System.out.println("Sintaxe: java Server DataBase_addr:port Server_port");
             return;
         }
         try {
@@ -33,8 +34,8 @@ public class Server {
             Port = Integer.parseInt(args[1]);
             serverSocket = new ServerSocket(Port);
             serverSocket.setSoTimeout(TIMEOUT);
-            new DataBaseConnect();
-            new ProcessUDPClients().start();
+            DataBase = new DataBaseConnect(args[0]);
+            new ProcessUDPClients(DataBase).start();
         } catch (UnknownHostException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -64,7 +65,7 @@ public class Server {
                         initData = (InitClient) oData;
                     }
                     if (initData != null) {
-                        DataBaseConnect.addClient(initData);
+                        DataBase.addClient(initData);
                         new ProcessTCPClient(socketToClient).start();
                     }
 
@@ -103,12 +104,13 @@ class ProcessUDPClients extends Thread {
     public List<InetAddress> ClientsAddr;
     public static final int TIMEOUT = 5; //segundos
     public static final int PORT = 5000;
-    public static final String DATA = "keepalive";
+    public static final String DATA = "Oi";
     private DataBaseConnect DataBase;
 
-    public ProcessUDPClients() throws SocketException {
+    public ProcessUDPClients(DataBaseConnect DataBase) throws SocketException {
         this.packets = new ArrayList<>();
         this.ClientsAddr = new ArrayList<>();
+        this.DataBase = DataBase;
         this.socket = new DatagramSocket(PORT);
         socket.setSoTimeout(TIMEOUT * 1000);
     }
@@ -121,7 +123,7 @@ class ProcessUDPClients extends Thread {
             try {
                 ClientsAddr.clear();
                 packets.clear();
-                for (String str : DataBaseConnect.getAllClientsAddr()) {
+                for (String str : DataBase.getAllClientsAddr()) {
                     ClientsAddr.add(InetAddress.getByName(str));
                 }
                 for (InetAddress addr : ClientsAddr) {
