@@ -41,6 +41,43 @@ public class Client extends Observable {
         out = new ObjectOutputStream(server.getOutputStream());
     }
 
+    public boolean doLogin(String username, String password) {
+        List<String>[] ficheiros;
+        ficheiros = getLocalFiles();
+        InitClient client = new InitClient(username, password, Addr.toString(), ficheiros);
+        try {
+            out.writeObject(client);
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+        return true;
+    }
+
+    public boolean register(String username, String password) {
+        List<String>[] ficheiros;
+        ficheiros = getLocalFiles();
+        RegisterClient client = new RegisterClient(username, password, Addr.toString(), ficheiros);
+        try {
+            out.writeObject(client);
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+        return true;
+    }
+
+    private List<String>[] getLocalFiles() {
+        List<String>[] ficheiros = (ArrayList<String>[]) new ArrayList[2];
+        File ficheirosFile[] = localDirectory.listFiles();
+        for (int i = 0; i < ficheirosFile.length; i++) {
+            ficheiros[0].add(ficheirosFile[i].getName());
+            ficheiros[1].add("" + ficheirosFile[i].length() / 1024);
+        }
+
+        return ficheiros;
+    }
+
     public void InputServer() {
         //Temporário só para esquematizar
         Object oData;
@@ -87,6 +124,7 @@ public class Client extends Observable {
         String FileName = "";
         ChatMsg Msg = new ChatMsg("Username", "Olá");
         Download download = new Download("FileName", "Ip do que fez upload", Addr.toString(), Calendar.getInstance());
+        //InitClient newclient = new Initclient("username","password","ClientAddr"
         try {
             //Pedir um ficheiro
             out.writeObject(FileName);
@@ -97,6 +135,9 @@ public class Client extends Observable {
 
             //Acabei de fazer um download
             out.writeObject(download);
+
+            //Fazer login
+            //out.writeObject(newclient);
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
