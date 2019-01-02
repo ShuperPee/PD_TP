@@ -31,6 +31,8 @@ public class Client extends Observable {
     private String username;
     private String password;
     public static final String DATA = "ack";
+    public static final int FILE_CHUNK = 5000;
+    public static final int TIMEOUT = 5000;
 
     public Client(InetAddress Addr, int Port, File localDirectory) throws IOException {
         this.Addr = Addr;
@@ -77,6 +79,15 @@ public class Client extends Observable {
         }
     }
 
+    public void requestFileServer(String FileName) {
+        try {
+            out.writeObject(FileName);
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+    }
+
     private List<String>[] getLocalFiles() {
         List<String>[] ficheiros = (ArrayList<String>[]) new ArrayList[2];
         File ficheirosFile[] = localDirectory.listFiles();
@@ -88,46 +99,73 @@ public class Client extends Observable {
         return ficheiros;
     }
 
-    public void InputServer() {
-        //Temporário só para esquematizar
-        Object oData;
+    private void finishDownload(String Filename, String client_up) {
+        Download download = new Download(Filename, client_up, Addr.toString(), Calendar.getInstance());
         try {
-            oData = in.readObject();
-            if (oData instanceof Chat) {
-                //Display  Chat na interface
-                setChanged();
-                notifyObservers(oData);
-            }
-            if (oData instanceof List) {
-                if (((List) oData).get(0) instanceof Download) {
-                    //Display Downloads na interface
-                }
-                if (((List) oData).get(0) instanceof String[]) {
-                    //Display Files na interface
-                    //[0] = name
-                    //[1] = size
-                }
-            }
-            if (oData instanceof String[]) {
-                //Connection Peer to Peer
-                //[0]ClientAddr String
-                //[1]Port String
-                //[2]File name
-                String[] P2P = (String[]) oData;
-                //Fazer isto numa thread!
-                requestFile(P2P[2], localDirectory, Integer.parseInt(P2P[1]), P2P[0]);
-            }
+            out.writeObject(download);
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
-        } catch (ClassNotFoundException ex) {
-            System.out.println("Erro - " + ex);
-            System.exit(1);
-        } catch (Exception ex) {
-            System.out.println("Erro - " + ex);
-            System.exit(1);
         }
+    }
 
+    public void InputServer() {
+        //Temporário só para esquematizar
+        Object oData;
+        while (true) {
+            try {
+                oData = in.readObject();
+                if (oData instanceof Chat) {
+                    //Display  Chat na interface
+                    List<String>[] files = (ArrayList<String>[]) oData;
+                    setChanged();
+                    notifyObservers(((Chat) oData).getMsgs());
+                }
+                if (oData instanceof List) {
+                    if (((List) oData).get(0) instanceof Download) {
+                        List<String> downloads = new ArrayList<>();
+                        for (Download i : (List<Download>) oData) {
+                            downloads.add(i.toString());
+                        }
+                        setChanged();
+                        notifyObservers(downloads);
+                    }
+                    if (((List) oData).get(0) instanceof String[]) {
+                        //Display Files na interface
+                        //[0] = name
+                        //[1] = size
+                        setChanged();
+                        List<String>[] files = (ArrayList<String>[]) oData;
+                        List<String> showStrings = new ArrayList<>();
+                        int i = 0;
+                        for (String j : files[0]) {
+                            showStrings.add(j);
+                            showStrings.add(files[1].get(i));
+                            i++;
+                        }
+                        notifyObservers(showStrings);
+                    }
+                }
+                if (oData instanceof String[]) {
+                    //Connection Peer to Peer
+                    //[0]ClientAddr String
+                    //[1]Port String
+                    //[2]File name
+                    String[] P2P = (String[]) oData;
+                    //Fazer isto numa thread!
+                    requestFile(P2P[2], localDirectory, Integer.parseInt(P2P[1]), P2P[0]);
+                }
+            } catch (IOException ex) {
+                System.out.println("Erro - " + ex);
+                System.exit(1);
+            } catch (ClassNotFoundException ex) {
+                System.out.println("Erro - " + ex);
+                System.exit(1);
+            } catch (Exception ex) {
+                System.out.println("Erro - " + ex);
+                System.exit(1);
+            }
+        }
     }
 
     public void OutputServer() {
@@ -154,11 +192,6 @@ public class Client extends Observable {
         }
     }
 
-    public List<String> getFiles() {
-        // from update?
-        return null;
-    }
-
     public void requestFile(String fileName, File localDirectory, int ClientPort, String addr) {
 
         String localFilePath = null;
@@ -166,7 +199,7 @@ public class Client extends Observable {
         PrintWriter pout;
         InputStream in;
         Socket socketToClient = null;
-        byte[] fileChunk = new byte[5000]; // CRIAR VARIAVEL ESTATICA
+        byte[] fileChunk = new byte[FILE_CHUNK]; // CRIAR VARIAVEL ESTATICA
         int nbytes;
 
         if (!localDirectory.exists()) {
@@ -207,7 +240,7 @@ public class Client extends Observable {
 
                 socketToClient = new Socket(addr, ClientPort);
 
-                socketToClient.setSoTimeout(5 * 1000); // CRIAR VARIAVEL ESTATICA TIMEOUT
+                socketToClient.setSoTimeout(TIMEOUT); // CRIAR VARIAVEL ESTATICA TIMEOUT
 
                 in = socketToClient.getInputStream();
                 pout = new PrintWriter(socketToClient.getOutputStream(), true);
@@ -220,7 +253,7 @@ public class Client extends Observable {
                     localFileOutputStream.write(fileChunk, 0, nbytes);
                     //System.out.println("Acrescentados " + nbytes + " bytes ao ficheiro " + localFilePath+ ".");
                 }
-
+                finishDownload(fileName, addr);
                 System.out.println("Transferencia concluida.");
 
             } catch (UnknownHostException e) {
