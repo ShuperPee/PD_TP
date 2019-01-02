@@ -96,7 +96,7 @@ public class DataBaseConnect {
     public String[] getClientAddr(String file) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        String clientAddr[] = null;
+        String clientAddr[] = new String[3];
         try {
             String sql;
 
@@ -112,10 +112,11 @@ public class DataBaseConnect {
                 //Recebe uma linha que representa um ficheiro de um cliente
                 if (rs.getString("name").compareTo(file) == 0) {
                     clientAddr[0] = rs.getString("client_addr");
-                    clientAddr[1] = rs.getString("port_tcp");
+                    clientAddr[1] = "" + rs.getInt("port_tcp");
                 }
             }
             rs.close();
+            clientAddr[2] = file;
             return clientAddr;
         } catch (SQLException se) {
             throw new SQLException(se);
@@ -202,7 +203,7 @@ public class DataBaseConnect {
     public List<String>[] getClientFiles(String clientAddr) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        List<String>[] files = null;
+        List<String>[] files = (ArrayList<String>[]) new ArrayList[2];
         files[0] = new ArrayList<>();
         files[1] = new ArrayList<>();
         try {
@@ -254,7 +255,7 @@ public class DataBaseConnect {
     public List<String>[] getFiles() throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        List<String>[] files = null;
+        List<String>[] files = (ArrayList<String>[]) new ArrayList[2];
         files[0] = new ArrayList<>();
         files[1] = new ArrayList<>();
         try {
@@ -308,7 +309,7 @@ public class DataBaseConnect {
     public List<String>[] getClientsDetails() throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        List<String>[] details = null;
+        List<String>[] details = (ArrayList<String>[]) new ArrayList[2];
         details[0] = new ArrayList<>();
         details[1] = new ArrayList<>();
         try {
