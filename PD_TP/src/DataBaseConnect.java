@@ -390,4 +390,60 @@ public class DataBaseConnect {
             }
         }
     }
+
+    /**
+     * getClientsDetails
+     *
+     * @return files - Lista com username e password
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public List<String>[] getClientsDetails() throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<String>[] details = null;
+        details[0] = new ArrayList<>();
+        details[1] = new ArrayList<>();
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT username, password FROM clients";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                if (!rs.getBoolean("islogged")) {
+                    details[0].add(rs.getString("username"));
+                    details[1].add(rs.getString("password"));
+                }
+            }
+
+            rs.close();
+            return details;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
 }

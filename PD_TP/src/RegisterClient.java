@@ -2,7 +2,7 @@
 import java.io.Serializable;
 import java.util.List;
 
-class InitClient implements Serializable {
+public class RegisterClient implements Serializable {
 
     static final long serialVersionUID = 1L;
     String ClientAddr;
@@ -10,22 +10,11 @@ class InitClient implements Serializable {
     String username;
     String password;
 
-    public InitClient(String username, String password, String ClientAddr, List<String> ficheiros) {
+    public RegisterClient(String username, String password, String ClientAddr, List<String> ficheiros) {
         this.username = username;
         this.password = password;
         this.ClientAddr = ClientAddr;
         this.ficheiros = ficheiros;
-    }
-
-    public InitClient(RegisterClient client) {
-        username = client.getUsername();
-        password = client.getPassword();
-        ClientAddr = client.getClientAddr();
-        ficheiros = client.getFicheiros();
-    }
-
-    public String toStringSQL() {
-        return ClientAddr;
     }
 
     public String getClientAddr() {

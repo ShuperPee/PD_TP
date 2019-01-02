@@ -1,6 +1,7 @@
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -24,6 +25,7 @@ public class Server {
         ServerSocket serverSocket = null;
         boolean toQuit = false;
         ObjectInputStream in;
+        ObjectOutputStream out;
         Socket socketToClient;
         InitClient initData = null;
         DataBaseConnect DataBase = null;
@@ -59,16 +61,38 @@ public class Server {
                 try {
 
                     socketToClient = serverSocket.accept();
+
                     //Recebe um Objecto da Class InitCliente e adiciona o Cliente a Base de dados
                     in = new ObjectInputStream(socketToClient.getInputStream());
                     Object oData = in.readObject();
-
+                    InitClient:
                     if (oData instanceof InitClient) {
                         initData = (InitClient) oData;
-                    }
-                    if (initData != null) {
-                        DataBase.addClient(initData);
-                        new ProcessTCPClient(socketToClient).start();
+                        //Verificar LogIn
+                        List<String>[] details = DataBase.getClientsDetails();
+                        int i = 0;
+                        for (String username : details[0]) {
+                            if (username.compareTo(initData.getUsername()) == 0) {
+                                if (details[1].get(i).compareTo(initData.getPassword()) == 0) {
+                                    if (DataBase.addClient(initData)) {
+                                        out = new ObjectOutputStream(socketToClient.getOutputStream());
+                                        out.writeObject("SuccessLogin");
+                                        new ProcessTCPClient(socketToClient).start();
+                                        break InitClient;
+                                    }
+                                }
+                            }
+                            i++;
+                        }
+                        out = new ObjectOutputStream(socketToClient.getOutputStream());
+                        out.writeObject("RejectedLogin");
+                    } else if (oData instanceof RegisterClient) {
+                        InitClient client = new InitClient((RegisterClient) oData);
+                        if (DataBase.addClient(client)) {
+                            out = new ObjectOutputStream(socketToClient.getOutputStream());
+                            out.writeObject("SuccessRegister");
+                            new ProcessTCPClient(socketToClient).start();
+                        }
                     }
 
                 } catch (IOException e) {
