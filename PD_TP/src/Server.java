@@ -236,16 +236,19 @@ class ProcessTCPClient extends Thread {
             if (oData instanceof String) {
                 String[] ClientAddr = DataBase.getClientAddr((String) oData);
                 //Enviar Ip do Cliente/Porto do cliente que contem o ficheiro
+                //Call Update?
                 out.writeObject(ClientAddr);
             }
             //Cliente quer enviar uma mensagem
             if (oData instanceof ChatMsg) {
                 chat.addMsg((ChatMsg) oData);
                 out.writeObject(chat);
+                //Call Update?
             }
             //Cliente fez um download
             if (oData instanceof Download) {
-
+                DataBase.addDownload((Download) oData);
+                //Call Update?
             }
 
         } catch (Exception ex) {
