@@ -67,6 +67,16 @@ public class Client extends Observable {
         return true;
     }
 
+    public void sendMsg(String msg) {
+        ChatMsg Msg = new ChatMsg(username, msg);
+        try {
+            out.writeObject(Msg);
+        } catch (IOException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+    }
+
     private List<String>[] getLocalFiles() {
         List<String>[] ficheiros = (ArrayList<String>[]) new ArrayList[2];
         File ficheirosFile[] = localDirectory.listFiles();
