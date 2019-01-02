@@ -242,4 +242,152 @@ public class DataBaseConnect {
             }
         }
     }
+
+    /**
+     * getClientFiles
+     *
+     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public void resetClientUDP(String clientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try {
+            String sql;
+            //Abrir a Conexao
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a Query
+            sql = "UPDATE clients SET counter_udp = 3 WHERE client_addr = ?";
+            stmt = conn.prepareStatement(sql);
+
+            //Substitui o "?" pelo ClienteAddress
+            stmt.setString(1, clientAddr);
+            stmt.executeUpdate();
+            return;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * badClientUDP
+     *
+     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public int badClientUDP(String clientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        Statement stmtGet = null;
+        int counter_udp = 0;
+        try {
+            String sql;
+            //Abrir a Conexao
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            sql = "SELECT * FROM clients";
+            //Executar a query
+            stmtGet = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                if (rs.getString("client_addr").compareTo(clientAddr) == 0) {
+                    counter_udp = rs.getInt("counter_udp");
+                }
+                break;
+            }
+            counter_udp--;
+            //Criar a Query
+            sql = "UPDATE clients SET counter_udp = ? WHERE client_addr = ?";
+            stmt = conn.prepareStatement(sql);
+
+            //Substitui o "?" pelo counter_udp
+            stmt.setInt(1, counter_udp);
+            stmt.executeUpdate();
+            return counter_udp;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * removeClient
+     *
+     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public void removeClient(String clientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try {
+            String sql;
+            //Abrir a Conexao
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+
+            //Criar a Query
+            sql = "DELETE FROM clients WHERE client_addr = ?";
+            stmt = conn.prepareStatement(sql);
+            //Substitui o "?" pelo clientAddr
+            stmt.setString(1, clientAddr);
+            stmt.executeUpdate();
+            return;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
 }

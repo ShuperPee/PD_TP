@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Server {
 
@@ -104,7 +106,8 @@ class ProcessUDPClients extends Thread {
     public List<InetAddress> ClientsAddr;
     public static final int TIMEOUT = 5; //segundos
     public static final int PORT = 5000;
-    public static final String DATA = "Oi";
+    public static final String DATA = "keepalive";
+    public String msg;
     private DataBaseConnect DataBase;
 
     public ProcessUDPClients(DataBaseConnect DataBase) throws SocketException {
@@ -138,11 +141,21 @@ class ProcessUDPClients extends Thread {
                 try {
                     socket.send(packet);
                     socket.receive(packet);
-                    //msg = new String(pkt.getData(), 0, pkt.getLength());
+                    msg = new String(packet.getData(), 0, packet.getLength());
+                    if (msg.equals("ack")) {
+                        DataBase.resetClientUDP(packet.getAddress().toString());
+                    } else {
+                        if (DataBase.badClientUDP(packet.getAddress().toString()) <= 0) {
+                            DataBase.removeClient(packet.getAddress().toString());
+                            //Desligar a ligação TCP
+                        }
+                    }
                     //Conseguiu, dar reset, tentativas = 5
                 } catch (IOException ex) {
                     //Não consegui,tentativas -=1
                     //Se chegar a 5 desativar cliente e seus ficheiros
+                } catch (Exception ex) {
+                    System.out.println("Erro - " + ex);
                 }
             }
         }
