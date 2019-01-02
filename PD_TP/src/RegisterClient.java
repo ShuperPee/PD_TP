@@ -6,11 +6,11 @@ public class RegisterClient implements Serializable {
 
     static final long serialVersionUID = 1L;
     String ClientAddr;
-    List<String> ficheiros;
+    List<String>[] ficheiros;
     String username;
     String password;
 
-    public RegisterClient(String username, String password, String ClientAddr, List<String> ficheiros) {
+    public RegisterClient(String username, String password, String ClientAddr, List<String>[] ficheiros) {
         this.username = username;
         this.password = password;
         this.ClientAddr = ClientAddr;
@@ -21,7 +21,7 @@ public class RegisterClient implements Serializable {
         return ClientAddr;
     }
 
-    public List<String> getFicheiros() {
+    public List<String>[] getFicheiros() {
         return ficheiros;
     }
 

@@ -1,11 +1,14 @@
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 public class DataBaseConnect {
@@ -90,10 +93,118 @@ public class DataBaseConnect {
      * @return clienteAddr - Addr de um cliente que contem o ficheiro
      * @throws java.sql.SQLException
      */
-    public String getClientAddr(String file) throws SQLException, Exception {
+    public String[] getClientAddr(String file) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        String clientAddr = "";
+        String clientAddr[] = null;
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT C.client_addr, C.port_tcp , F.name FROM files F, clients C WHERE C.idclients = F.clients_idclients";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                if (rs.getString("name").compareTo(file) == 0) {
+                    clientAddr[0] = rs.getString("client_addr");
+                    clientAddr[1] = rs.getString("port_tcp");
+                }
+            }
+            rs.close();
+            return clientAddr;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getClientId
+     *
+     * @param file - identifica o ficheiro.
+     * @return clientId - Id do client
+     * @throws java.sql.SQLException
+     */
+    public int getClientId(String ClientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        int clientId = -1;
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT * FROM clients";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                if (rs.getString("client_addr").compareTo(ClientAddr) == 0) {
+                    clientId = rs.getInt("id_clients");
+                }
+            }
+            rs.close();
+            return clientId;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getClientFiles
+     *
+     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
+     * @return files - Lista dos nomes dos ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public List<String>[] getClientFiles(String clientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<String>[] files = null;
+        files[0] = new ArrayList<>();
+        files[1] = new ArrayList<>();
         try {
             String sql;
 
@@ -106,16 +217,176 @@ public class DataBaseConnect {
             ResultSet rs = stmt.executeQuery(sql);
             //Extrair informações do resultado da query
             while (rs.next()) {
-                //Recebe uma linha que representa um ficheiro de um cliente
-                if (rs.getString("name").compareTo(file) == 0) {
-                    clientAddr = rs.getString("client_addr");
-                    if (clientAddr.isEmpty()) {
-                        //Error
-                    }
-                }
+                files[0].add(rs.getString("name"));
+                files[1].add(rs.getString("size"));
             }
             rs.close();
-            return clientAddr;
+            return files;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getFiles
+     *
+     * @return files - Array com duas Listas com nomes e tamanho dos ficheiros
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public List<String>[] getFiles() throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<String>[] files = null;
+        files[0] = new ArrayList<>();
+        files[1] = new ArrayList<>();
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT name, size FROM files";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                files[0].add(rs.getString("name"));
+                files[1].add(rs.getString("size"));
+            }
+
+            rs.close();
+            return files;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getClientsDetails
+     *
+     * @return files - Lista com username e password
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public List<String>[] getClientsDetails() throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<String>[] details = null;
+        details[0] = new ArrayList<>();
+        details[1] = new ArrayList<>();
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT username, password FROM clients";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um ficheiro de um cliente
+                if (!rs.getBoolean("islogged")) {
+                    details[0].add(rs.getString("username"));
+                    details[1].add(rs.getString("password"));
+                }
+            }
+
+            rs.close();
+            return details;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * getDownloads
+     *
+     * @return files - Lista downloads(up e down) de um client
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public List<Download> getDownloads(String ClientAddr) throws SQLException, Exception {
+        Connection conn = null;
+        Statement stmt = null;
+        List<Download> downloads = new ArrayList<>();
+        try {
+            String sql;
+
+            //Abrir a Conexao
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            //Criar a query
+            sql = "SELECT * FROM DOWNLOADS";
+            //Executar a query
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            //Extrair informações do resultado da query
+            while (rs.next()) {
+                //Recebe uma linha que representa um download
+                if (rs.getString("client_up").equals(ClientAddr) || rs.getString("client_down").equals(ClientAddr)) {
+                    Calendar time = GregorianCalendar.getInstance();
+                    time.setTime(rs.getDate("date"));
+                    downloads.add(new Download(rs.getString("filename"), rs.getString("client_up"), rs.getString("client_down"), time));
+                }
+            }
+
+            rs.close();
+            return downloads;
         } catch (SQLException se) {
             throw new SQLException(se);
         } catch (Exception e) {
@@ -149,6 +420,7 @@ public class DataBaseConnect {
     public boolean addClient(InitClient newClient) throws SQLException, Exception {
         Connection conn = null;
         PreparedStatement stmt = null;
+        int clientId = -1;
         try {
             String sql;
             //Abrir a Conexao
@@ -156,8 +428,16 @@ public class DataBaseConnect {
             conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
             //Criar a Query
             sql = "INSERT INTO clients (client_addr,active)" + " VALUES(" + newClient.toStringSQL() + ")";
-            for (String str : newClient.getFicheiros()) {
-                sql += "INSERT INTO files (client_addr,name)" + "VALUES(" + newClient.getClientAddr() + "," + str + ")";
+
+            clientId = this.getClientId(newClient.getClientAddr());
+            if (clientId == -1) {
+                return false;
+            }
+            List<String>[] ficheiros = newClient.getFicheiros();
+            int i = 0;
+            for (String name : ficheiros[0]) {
+                sql += "INSERT INTO files (clients_idclients,name,size)" + "VALUES(" + clientId + "," + newClient.getClientAddr() + "," + name + "," + ficheiros[1].get(i) + ")";
+                i++;
             }
             sql += ";";
             stmt = conn.prepareStatement(sql);
@@ -188,39 +468,37 @@ public class DataBaseConnect {
     }
 
     /**
-     * getClientFiles
+     * addDownload
      *
-     * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
-     * @return files - Lista dos nomes dos ficheiros
+     * @param download - um download a adicionar
+     * @return sucesso da operação
      * @throws java.sql.SQLException
      * @throws Exception
      */
-    public List<String> getClientFiles(String clientAddr) throws SQLException, Exception {
+    public boolean addDownload(Download download) throws SQLException, Exception {
         Connection conn = null;
-        Statement stmt = null;
-        List<String> files = new ArrayList<>();
+        PreparedStatement stmt = null;
+        int clientId = -1;
+        int FileId = -1;
         try {
             String sql;
-
             //Abrir a Conexao
+            Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
-            //Criar a query
-            sql = "SELECT * FROM files";
-            //Executar a query
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            //Extrair informações do resultado da query
-            while (rs.next()) {
-                //Recebe uma linha que representa um ficheiro de um cliente
-                if (rs.getString("client_addr").compareTo(clientAddr) == 0) {
-                    files.add(rs.getString("name"));
-                    if (files.isEmpty()) {
-                        //Error
-                    }
-                }
+
+            clientId = this.getClientId(download.getClient_up());
+            if (clientId == -1) {
+                return false;
             }
-            rs.close();
-            return files;
+            //Criar a Query
+            sql = "INSERT INTO DOWNLOADS (files_clients_idclients,name,client_up,client_down,date)"
+                    + "VALUES(" + clientId + "," + download.getFile() + "," + download.getClient_up() + ","
+                    + download.getClient_down() + ",?);";
+            stmt = conn.prepareStatement(sql);
+            //Substitui o "?" pela data
+            stmt.setDate(1, new Date(download.getTime().getTimeInMillis()));
+            stmt.executeUpdate();
+            return true;
         } catch (SQLException se) {
             throw new SQLException(se);
         } catch (Exception e) {
@@ -244,7 +522,7 @@ public class DataBaseConnect {
     }
 
     /**
-     * getClientFiles
+     * resetClientUDP
      *
      * @param clientAddr - String da Addr de um cliente que se quer os ficheiros
      * @throws java.sql.SQLException
@@ -391,59 +669,4 @@ public class DataBaseConnect {
         }
     }
 
-    /**
-     * getClientsDetails
-     *
-     * @return files - Lista com username e password
-     * @throws java.sql.SQLException
-     * @throws Exception
-     */
-    public List<String>[] getClientsDetails() throws SQLException, Exception {
-        Connection conn = null;
-        Statement stmt = null;
-        List<String>[] details = null;
-        details[0] = new ArrayList<>();
-        details[1] = new ArrayList<>();
-        try {
-            String sql;
-
-            //Abrir a Conexao
-            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
-            //Criar a query
-            sql = "SELECT username, password FROM clients";
-            //Executar a query
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            //Extrair informações do resultado da query
-            while (rs.next()) {
-                //Recebe uma linha que representa um ficheiro de um cliente
-                if (!rs.getBoolean("islogged")) {
-                    details[0].add(rs.getString("username"));
-                    details[1].add(rs.getString("password"));
-                }
-            }
-
-            rs.close();
-            return details;
-        } catch (SQLException se) {
-            throw new SQLException(se);
-        } catch (Exception e) {
-            throw new Exception(e);
-        } finally {
-            try {
-                if (stmt != null) {
-                    stmt.close();
-                }
-            } catch (SQLException se2) {
-                throw new SQLException(se2);
-            }
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException se) {
-                throw new SQLException(se);
-            }
-        }
-    }
 }

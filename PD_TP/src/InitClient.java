@@ -6,11 +6,11 @@ class InitClient implements Serializable {
 
     static final long serialVersionUID = 1L;
     String ClientAddr;
-    List<String> ficheiros;
+    List<String>[] ficheiros;
     String username;
     String password;
 
-    public InitClient(String username, String password, String ClientAddr, List<String> ficheiros) {
+    public InitClient(String username, String password, String ClientAddr, List<String>[] ficheiros) {
         this.username = username;
         this.password = password;
         this.ClientAddr = ClientAddr;
@@ -25,14 +25,14 @@ class InitClient implements Serializable {
     }
 
     public String toStringSQL() {
-        return ClientAddr;
+        return ClientAddr + ",TRUE";
     }
 
     public String getClientAddr() {
         return ClientAddr;
     }
 
-    public List<String> getFicheiros() {
+    public List<String>[] getFicheiros() {
         return ficheiros;
     }
 

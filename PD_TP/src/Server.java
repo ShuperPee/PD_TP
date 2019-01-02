@@ -29,6 +29,7 @@ public class Server {
         Socket socketToClient;
         InitClient initData = null;
         DataBaseConnect DataBase = null;
+        Chat chat = new Chat();
         if (args.length != 2) {
             System.out.println("Sintaxe: java Server DataBase_addr:port Server_port");
             return;
@@ -77,7 +78,7 @@ public class Server {
                                     if (DataBase.addClient(initData)) {
                                         out = new ObjectOutputStream(socketToClient.getOutputStream());
                                         out.writeObject("SuccessLogin");
-                                        new ProcessTCPClient(socketToClient).start();
+                                        new ProcessTCPClient(socketToClient, DataBase, chat).start();
                                         break InitClient;
                                     }
                                 }
@@ -91,7 +92,7 @@ public class Server {
                         if (DataBase.addClient(client)) {
                             out = new ObjectOutputStream(socketToClient.getOutputStream());
                             out.writeObject("SuccessRegister");
-                            new ProcessTCPClient(socketToClient).start();
+                            new ProcessTCPClient(socketToClient, DataBase, chat).start();
                         }
                     }
 
@@ -176,8 +177,14 @@ class ProcessUDPClients extends Thread {
                     }
                     //Conseguiu, dar reset, tentativas = 5
                 } catch (IOException ex) {
-                    //Não consegui,tentativas -=1
-                    //Se chegar a 5 desativar cliente e seus ficheiros
+                    try {
+                        if (DataBase.badClientUDP(packet.getAddress().toString()) <= 0) {
+                            DataBase.removeClient(packet.getAddress().toString());
+                            //Desligar a ligação TCP
+                        }
+                    } catch (Exception ex1) {
+                        System.out.println("Erro - " + ex1);
+                    }
                 } catch (Exception ex) {
                     System.out.println("Erro - " + ex);
                 }
@@ -189,15 +196,62 @@ class ProcessUDPClients extends Thread {
 
 class ProcessTCPClient extends Thread {
 
-    public Socket socketToClient;
+    private Socket socketToClient;
+    private DataBaseConnect DataBase;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
+    public Chat chat;
     public static final int TIMEOUT = 5; //segundos
 
-    public ProcessTCPClient(Socket socketToClient) {
+    public ProcessTCPClient(Socket socketToClient, DataBaseConnect DataBase, Chat chat) {
         this.socketToClient = socketToClient;
+        this.DataBase = DataBase;
+        this.chat = chat;
     }
 
     @Override
     public void run() {
+        try {
+            in = new ObjectInputStream(socketToClient.getInputStream());
+            out = new ObjectOutputStream(socketToClient.getOutputStream());
+        } catch (Exception ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+
+        //Update?
+        try {
+            out.writeObject(DataBase.getFiles());
+            out.writeObject(chat);
+            out.writeObject(DataBase.getDownloads(socketToClient.getInetAddress().toString()));
+        } catch (Exception ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
+        //Recebe Informação do cliente
+        try {
+            Object oData;
+            oData = in.readObject();
+            //Cliente Quer um ficheiro
+            if (oData instanceof String) {
+                String[] ClientAddr = DataBase.getClientAddr((String) oData);
+                //Enviar Ip do Cliente/Porto do cliente que contem o ficheiro
+                out.writeObject(ClientAddr);
+            }
+            //Cliente quer enviar uma mensagem
+            if (oData instanceof ChatMsg) {
+                chat.addMsg((ChatMsg) oData);
+                out.writeObject(chat);
+            }
+            //Cliente fez um download
+            if (oData instanceof Download) {
+
+            }
+
+        } catch (Exception ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
+        }
         try {
             socketToClient.close();
         } catch (IOException ex) {
