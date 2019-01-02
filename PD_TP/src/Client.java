@@ -16,10 +16,11 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Observable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Client {
+public class Client extends Observable {
 
     private ObjectInputStream in;
     private ObjectOutputStream out;
@@ -27,6 +28,9 @@ public class Client {
     private InetAddress Addr;
     private int Port;
     private File localDirectory;
+    private String username;
+    private String password;
+    public static final String DATA = "ack";
 
     public Client(InetAddress Addr, int Port, File localDirectory) throws IOException {
         this.Addr = Addr;
@@ -42,9 +46,10 @@ public class Client {
         Object oData;
         try {
             oData = in.readObject();
-
             if (oData instanceof Chat) {
                 //Display  Chat na interface
+                setChanged();
+                notifyObservers(oData);
             }
             if (oData instanceof List) {
                 if (((List) oData).get(0) instanceof Download) {
@@ -198,8 +203,6 @@ public class Client {
         }
     }
 
-    public static final String DATA = "ack";
-
     public static void main(String[] args) {
         if (args.length != 3) {
             System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
@@ -216,4 +219,21 @@ public class Client {
         }
 
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
 }
