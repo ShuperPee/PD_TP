@@ -15,9 +15,9 @@ public class DataBaseConnect {
 
     // Nome do Driver JDBC e Endereco URL da Base de Dados
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    public String SERVIDOR;
+    public static String SERVIDOR;
     static final String NOME_BD = "pd_1819";
-    public String URL_BD;
+    public static String URL_BD;
     // Credenciais da Base de Dados
     static final String UTILIZADOR = "root";
     static final String SENHA = "gps34-1819";
@@ -149,7 +149,7 @@ public class DataBaseConnect {
      * @return clientId - Id do client
      * @throws java.sql.SQLException
      */
-    public int getClientId(String ClientAddr) throws SQLException, Exception {
+    public static int getClientId(String ClientAddr) throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
         int clientId = -1;
@@ -167,7 +167,7 @@ public class DataBaseConnect {
             while (rs.next()) {
                 //Recebe uma linha que representa um ficheiro de um cliente
                 if (rs.getString("client_addr").compareTo(ClientAddr) == 0) {
-                    clientId = rs.getInt("id_clients");
+                    clientId = rs.getInt("idclients");
                 }
             }
             rs.close();
@@ -311,26 +311,27 @@ public class DataBaseConnect {
     public List<String>[] getClientsDetails() throws SQLException, Exception {
         Connection conn = null;
         Statement stmt = null;
-        List<String>[] details = (ArrayList<String>[]) new ArrayList[2];
-        details[0] = new ArrayList<>();
-        details[1] = new ArrayList<>();
+        ArrayList<String>[] details = (ArrayList<String>[]) new ArrayList[2];
+        details[0] = new ArrayList<String>();
+        details[1] = new ArrayList<String>();
         try {
             String sql;
 
             //Abrir a Conexao
             conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
             //Criar a query
-            sql = "SELECT username, password FROM clients";
+            sql = "SELECT username, password FROM clients;";
             //Executar a query
             stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             //Extrair informações do resultado da query
             while (rs.next()) {
                 //Recebe uma linha que representa um ficheiro de um cliente
-                if (!rs.getBoolean("islogged")) {
-                    details[0].add(rs.getString("username"));
-                    details[1].add(rs.getString("password"));
-                }
+                //DEPOIS DE IMPLEMENTAR O LOGOUT METER !
+                //if (rs.getInt("islogged") == 1) {
+                details[0].add(rs.getString("username"));
+                details[1].add(rs.getString("password"));
+                //}
             }
 
             rs.close();
@@ -420,7 +421,7 @@ public class DataBaseConnect {
      * @throws java.sql.SQLException
      * @throws Exception
      */
-    public boolean addClient(InitClient newClient) throws SQLException, Exception {
+    public static boolean addClient(InitClient newClient) throws SQLException, Exception {
         Connection conn = null;
         PreparedStatement stmt = null;
         int clientId = -1;
@@ -430,23 +431,79 @@ public class DataBaseConnect {
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
             //Criar a Query
-            sql = "INSERT INTO clients (client_addr,active)" + " VALUES(" + newClient.toStringSQL() + ")";
-
-            clientId = this.getClientId(newClient.getClientAddr());
+            sql = "INSERT INTO clients (client_addr,username,password,islogged,directory,port_udp,port_tcp,counter_udp)" + " VALUES(" + newClient.toStringSQL();
+            stmt = conn.prepareStatement(sql);
+            stmt.executeUpdate();
+            clientId = getClientId(newClient.getClientAddr());
             if (clientId == -1) {
                 return false;
             }
             List<String>[] ficheiros = newClient.getFicheiros();
             int i = 0;
+            sql = "";
             for (String name : ficheiros[0]) {
-                sql += "INSERT INTO files (clients_idclients,name,size)" + "VALUES(" + clientId + "," + newClient.getClientAddr() + "," + name + "," + ficheiros[1].get(i) + ")";
+                sql = "INSERT INTO files (idclients,name,size)" + "VALUES(" + clientId + ",'" + name + "'," + ficheiros[1].get(i) + ");";
                 i++;
+                stmt = conn.prepareStatement(sql);
+                stmt.executeUpdate();
             }
-            sql += ";";
+            return true;
+        } catch (SQLException se) {
+            throw new SQLException(se);
+        } catch (Exception e) {
+            throw new Exception(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException se2) {
+                throw new SQLException(se2);
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException se) {
+                throw new SQLException(se);
+            }
+        }
+    }
+
+    /**
+     * updateClient
+     *
+     * @param newClient - um cliente a Adicionar
+     * @return sucesso da operação
+     * @throws java.sql.SQLException
+     * @throws Exception
+     */
+    public static boolean updateClient(InitClient newClient) throws SQLException, Exception {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        int clientId = -1;
+        try {
+            String sql;
+            //Abrir a Conexao
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(URL_BD, UTILIZADOR, SENHA);
+            clientId = getClientId(newClient.getClientAddr());
+            if (clientId == -1) {
+                return false;
+            }
+            sql = "DELETE FROM files WHERE idclients = ?";
             stmt = conn.prepareStatement(sql);
-            //Substitui o "?" pelo estado
-            //stmt.setInt(1, tarefa.getEstado());
+            stmt.setInt(1, clientId);
             stmt.executeUpdate();
+            List<String>[] ficheiros = newClient.getFicheiros();
+            int i = 0;
+            sql = "";
+            for (String name : ficheiros[0]) {
+                sql = "INSERT INTO files (idclients,name,size)" + "VALUES(" + clientId + ",'" + name + "'," + ficheiros[1].get(i) + ");";
+                i++;
+                stmt = conn.prepareStatement(sql);
+                stmt.executeUpdate();
+            }
             return true;
         } catch (SQLException se) {
             throw new SQLException(se);

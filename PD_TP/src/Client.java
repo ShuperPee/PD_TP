@@ -30,6 +30,8 @@ public class Client extends Observable {
     private String password;
     public ProcessServer processServer;
     private Object oData;
+    private int port_udp = 3000;
+    private int port_tcp = 7000;
     public static final String DATA = "ack";
     public static final int FILE_CHUNK = 5000;
     public static final int TIMEOUT = 50000;
@@ -52,17 +54,19 @@ public class Client extends Observable {
     public boolean doLogin(String username, String password) {
         List<String>[] ficheiros;
         ficheiros = getLocalFiles();
-        InitClient client = new InitClient(username, password, Addr.toString(), ficheiros);
+
         try {
-            synchronized (oData) {
-                out.writeObject(client);
-                oData = in.readObject();
-                if (((String) oData).equals(("SuccessLogin"))) {
-                    return true;
-                } else {
-                    return false;
-                }
+            InitClient client = new InitClient(username, password, Addr.toString(), ficheiros, localDirectory.getCanonicalPath(), port_udp, port_tcp);
+            //synchronized (oData) {
+            out.writeObject((Object) client);
+            out.flush();
+            oData = in.readObject();
+            if (((String) oData).equals(("SuccessLogin"))) {
+                return true;
+            } else {
+                return false;
             }
+            //  }
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -76,17 +80,21 @@ public class Client extends Observable {
     public boolean register(String username, String password) {
         List<String>[] ficheiros;
         ficheiros = getLocalFiles();
-        RegisterClient client = new RegisterClient(username, password, Addr.toString(), ficheiros);
+
         try {
-            synchronized (oData) {
-                out.writeObject(client);
-                oData = in.readObject();
-                if (((String) oData).equals(("SuccessLogin"))) {
-                    return true;
-                } else {
-                    return false;
-                }
+            RegisterClient client = new RegisterClient(username, password, Addr.toString(), ficheiros, localDirectory.getCanonicalPath(), port_udp, port_tcp);
+            //synchronized (oData) {
+            out.writeObject((Object) client);
+            out.flush();
+            System.out.println("Mandou para o Servidor");
+            oData = in.readObject();
+            System.out.println("Recebeu do Servidor");
+            if (((String) oData).equals(("SuccessLogin"))) {
+                return true;
+            } else {
+                return false;
             }
+            //}
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -116,12 +124,15 @@ public class Client extends Observable {
         }
     }
 
-    private List<String>[] getLocalFiles() {
-        List<String>[] ficheiros = (ArrayList<String>[]) new ArrayList[2];
+    public List<String>[] getLocalFiles() {
+        ArrayList<String>[] ficheiros = (ArrayList<String>[]) new ArrayList[2];
+        ficheiros[0] = new ArrayList<String>();
+        ficheiros[1] = new ArrayList<String>();
         File ficheirosFile[] = localDirectory.listFiles();
         for (int i = 0; i < ficheirosFile.length; i++) {
             ficheiros[0].add(ficheirosFile[i].getName());
             ficheiros[1].add("" + ficheirosFile[i].length() / 1024);
+            System.out.println(ficheiros[0].get(i) + " + " + ficheiros[1].get(i));
         }
 
         return ficheiros;
@@ -233,7 +244,7 @@ public class Client extends Observable {
     }
 
     public void startProcessServer() {
-        new ProcessServer().start();
+        //new ProcessServer().start();
         try {
             new ProcessUDP().start();
         } catch (SocketException ex) {
@@ -247,10 +258,15 @@ public class Client extends Observable {
     }
 
     public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
-            return;
-        }
+//        if (args.length != 3) {
+//            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
+//            return;
+//        }
+//localhost 7000 c:\temp2
+        args = new String[3];
+        args[0] = "localhost";
+        args[1] = "7000";
+        args[2] = "c:\\temp2";
         try {
 
             Client client = new Client(InetAddress.getByName(args[0]), Integer.parseInt(args[1]), new File(args[2]));
@@ -275,9 +291,11 @@ public class Client extends Observable {
 
         @Override
         public void run() {
+
+            //out.writeObject(getLocalFiles());
+            //out.flush();
             while (!quit) {
                 try {
-                    out.writeObject(getLocalFiles());
                     oData = in.readObject();
                     if (oData instanceof Chat) {
                         //Display  Chat na interface
@@ -337,12 +355,16 @@ public class Client extends Observable {
 
         public ProcessUDP() throws SocketException {
             socket = new DatagramSocket(Port);
+            socket.setSoTimeout(TIMEOUT * 10);
         }
 
         @Override
         public void run() {
             while (!quit) {
                 try {
+                    while (!quit) {
+
+                    }
                     socket.receive(packet);
                     packet = new DatagramPacket(DATA.getBytes(), DATA.length(), Addr, Port);
                     socket.send(packet);

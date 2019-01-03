@@ -68,7 +68,7 @@ public class TextUI implements Observer {
                         System.out.println("Registo falhou!");
                     }
 
-                    return;
+                    break;
 
                 case '2':
 
@@ -80,15 +80,16 @@ public class TextUI implements Observer {
                     sucess = client.doLogin(username, password);
 
                     if (sucess == true) {
-                        System.out.println("Registo efetuado com sucesso!");
+                        System.out.println("Login efetuado com sucesso!");
+                        uiLogin();
                     } else {
-                        System.out.println("Registo falhou!");
+                        System.out.println("Login falhou!");
                     }
 
-                    return;
+                    break;
 
                 default:
-                    return;
+                    break;
 
             }
 
@@ -141,10 +142,8 @@ public class TextUI implements Observer {
                     boolean sucess = false;
                     System.out.println("Message: ");
                     String msg = ler.nextLine();
-
                     client.sendMsg(msg);
-
-                    return;
+                    break;
 
                 case '2':
 
@@ -152,7 +151,7 @@ public class TextUI implements Observer {
                     fileName = ler.nextLine();
                     client.requestFileServer(fileName);
                 default:
-                    return;
+                    break;
 
             }
 

@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Server {
 
-    public static final int TIMEOUT = 5000; //segundos
+    public static final int TIMEOUT = 50000; //segundos
 
     public static void main(String[] args) {
         InetAddress Addr;
@@ -33,15 +33,15 @@ public class Server {
 //            return;
 //        }
         args = new String[2];
-        args[0] = "192.168.0.238";
-        args[1] = "2500";
+        args[0] = "localhost";
+        args[1] = "7000";
         try {
             Addr = InetAddress.getByName(args[0]);
             Port = Integer.parseInt(args[1]);
             serverSocket = new ServerSocket(Port);
             serverSocket.setSoTimeout(TIMEOUT);
             DataBase = new DataBaseConnect(args[0]);
-            new ProcessUDPClients(DataBase).start();
+            //new ProcessUDPClients(DataBase).start();
         } catch (UnknownHostException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -61,44 +61,9 @@ public class Server {
             while (!toQuit) {
 
                 try {
-
+                    System.out.println("E1 ");
                     socketToClient = serverSocket.accept();
-
-                    //Recebe um Objecto da Class InitCliente e adiciona o Cliente a Base de dados
-                    in = new ObjectInputStream(socketToClient.getInputStream());
-                    Object oData = in.readObject();
-                    InitClient:
-                    if (oData instanceof InitClient) {
-                        initData = (InitClient) oData;
-                        //Verificar LogIn
-                        List<String>[] details = DataBase.getClientsDetails();
-                        int i = 0;
-                        for (String username : details[0]) {
-                            if (username.compareTo(initData.getUsername()) == 0) {
-                                if (details[1].get(i).compareTo(initData.getPassword()) == 0) {
-                                    if (DataBase.addClient(initData)) {
-                                        out = new ObjectOutputStream(socketToClient.getOutputStream());
-                                        out.writeObject("SuccessLogin");
-                                        out.flush();
-                                        new ProcessTCPClient(socketToClient, DataBase, chat).start();
-                                        break InitClient;
-                                    }
-                                }
-                            }
-                            i++;
-                        }
-                        out = new ObjectOutputStream(socketToClient.getOutputStream());
-                        out.writeObject("RejectedLogin");
-                        out.flush();
-                    } else if (oData instanceof RegisterClient) {
-                        InitClient client = new InitClient((RegisterClient) oData);
-                        if (DataBase.addClient(client)) {
-                            out = new ObjectOutputStream(socketToClient.getOutputStream());
-                            out.writeObject("SuccessRegister");
-                            out.flush();
-                            new ProcessTCPClient(socketToClient, DataBase, chat).start();
-                        }
-                    }
+                    new ProcessTCPClient(socketToClient, DataBase, chat).start();
 
                 } catch (IOException e) {
                     if (!toQuit) {
@@ -107,12 +72,6 @@ public class Server {
                     System.out.println("Ocorreu uma excepcao no socket enquanto aguardava por um pedido de ligação: \n" + e);
                     System.out.println("O servidor vai terminar...");
                     return;
-                } catch (ClassNotFoundException ex) {
-                    System.out.println("Erro - " + ex);
-                    System.exit(1);
-                } catch (SQLException ex) {
-                    System.out.println("Erro - " + ex);
-                    System.exit(1);
                 } catch (Exception ex) {
                     System.out.println("Erro - " + ex);
                     System.exit(1);
@@ -216,26 +175,71 @@ class ProcessTCPClient extends Thread {
 
     @Override
     public void run() {
+        InitClient initData;
+        //Recebe um Objecto da Class InitCliente e adiciona o Cliente a Base de dados
         try {
-            in = new ObjectInputStream(socketToClient.getInputStream());
             out = new ObjectOutputStream(socketToClient.getOutputStream());
+            in = new ObjectInputStream(socketToClient.getInputStream());
+            System.out.println("Vai ler");
+            Object oData = in.readObject();
+            System.out.println("Já leu");
+
+            InitClient:
+            if (oData instanceof InitClient) {
+                initData = (InitClient) oData;
+                //Verificar LogIn
+                List<String>[] details = DataBase.getClientsDetails();
+                int i = 0;
+                if (details != null) {
+                    details:
+                    for (String username : details[0]) {
+                        if (username.compareTo(initData.getUsername()) == 0) {
+                            if (details[1].get(i).compareTo(initData.getPassword()) == 0) {
+                                if (DataBase.updateClient(initData)) {
+                                    System.out.println("vai enviar");
+                                    out.writeObject("SuccessLogin");
+                                    out.flush();
+                                    System.out.println("já enviou");
+                                    break details;
+                                }
+                            }
+                        }
+                        i++;
+                    }
+                }
+                out.writeObject("RejectedLogin");
+                out.flush();
+            } else if ((oData) instanceof RegisterClient) {
+                InitClient client = new InitClient((RegisterClient) oData);
+                System.out.println("Vai a base de dados");
+                if (DataBase.addClient(client)) {
+                    System.out.println("vai enviar");
+                    out.writeObject("SuccessLogin");
+                    out.flush();
+                    System.out.println("já enviou");
+                }
+            }
         } catch (Exception ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
         }
 
         //Update?
-        try {
-            out.writeObject(DataBase.getFiles());
-            out.writeObject(chat);
-            out.writeObject(DataBase.getDownloads(socketToClient.getInetAddress().toString()));
-            out.flush();
-        } catch (Exception ex) {
-            System.out.println("Erro - " + ex);
-            System.exit(1);
-        }
+        //try {
+        //out.writeObject(DataBase.getFiles());
+        //out.writeObject(chat);
+        //out.writeObject(DataBase.getDownloads(socketToClient.getInetAddress().toString()));
+        //out.flush();
+        //} catch (Exception ex) {
+        //   System.out.println("Erro - " + ex);
+        //    System.exit(1);
+        // }
         //Recebe Informação do cliente
         try {
+            boolean flag = true;
+            while (flag) {
+                return;
+            }
             Object oData;
             oData = in.readObject();
             //Cliente Quer um ficheiro

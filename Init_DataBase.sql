@@ -18,7 +18,7 @@ USE `pd_1819` ;
 -- Table `pd_1819`.`clients`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `pd_1819`.`clients` (
-  `idclients` INT NOT NULL,
+  `idclients` INT NOT NULL AUTO_INCREMENT,
   `client_addr` VARCHAR(45) NOT NULL,
   `username` VARCHAR(45) NOT NULL,
   `password` VARCHAR(45) NOT NULL,
@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS `pd_1819`.`clients` (
   `port_udp` INT NOT NULL,
   `port_tcp` INT NOT NULL,
   `counter_udp` VARCHAR(45) NOT NULL,
-  PRIMARY KEY (`idclients`))
+  PRIMARY KEY (`idclients`),
+  UNIQUE INDEX `idclients_UNIQUE` (`idclients` ASC) VISIBLE)
 ENGINE = InnoDB;
 
 
@@ -35,13 +36,14 @@ ENGINE = InnoDB;
 -- Table `pd_1819`.`files`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `pd_1819`.`files` (
-  `idfiles` INT NOT NULL,
+  `idfiles` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   `size` VARCHAR(45) NOT NULL,
-  `clients_idclients` INT NOT NULL,
-  PRIMARY KEY (`clients_idclients`),
+  `idclients` INT NOT NULL,
+  PRIMARY KEY (`idfiles`),
+  UNIQUE INDEX `idfiles_UNIQUE` (`idfiles` ASC) VISIBLE,
   CONSTRAINT `fk_files_clients`
-    FOREIGN KEY (`clients_idclients`)
+    FOREIGN KEY (`idclients`)
     REFERENCES `pd_1819`.`clients` (`idclients`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -52,17 +54,18 @@ ENGINE = InnoDB;
 -- Table `pd_1819`.`downloads`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `pd_1819`.`downloads` (
-  `iddownloads` INT NOT NULL,
+  `iddownloads` INT NOT NULL AUTO_INCREMENT,
   `filename` VARCHAR(45) NOT NULL,
   `client_up` VARCHAR(45) NOT NULL,
   `client_down` VARCHAR(45) NOT NULL,
   `date` DATETIME NOT NULL,
-  `files_clients_idclients` INT NOT NULL,
-  PRIMARY KEY (`iddownloads`, `files_clients_idclients`),
-  INDEX `fk_downloads_files1_idx` (`files_clients_idclients` ASC) VISIBLE,
+  `idfiles` INT NOT NULL,
+  PRIMARY KEY (`iddownloads`),
+  INDEX `fk_downloads_files1_idx` (`idfiles` ASC) VISIBLE,
+  UNIQUE INDEX `iddownloads_UNIQUE` (`iddownloads` ASC) VISIBLE,
   CONSTRAINT `fk_downloads_files1`
-    FOREIGN KEY (`files_clients_idclients`)
-    REFERENCES `pd_1819`.`files` (`clients_idclients`)
+    FOREIGN KEY (`idfiles`)
+    REFERENCES `pd_1819`.`files` (`idclients`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
