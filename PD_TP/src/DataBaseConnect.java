@@ -20,7 +20,7 @@ public class DataBaseConnect {
     public String URL_BD;
     // Credenciais da Base de Dados
     static final String UTILIZADOR = "root";
-    static final String SENHA = "pd-1819";
+    static final String SENHA = "gps34-1819";
 
     /*dataBaseAddr deve ser assim
     * = "localhost:3306/NOME_BD";
@@ -28,9 +28,11 @@ public class DataBaseConnect {
      */
     public DataBaseConnect(String dataBaseAddr) throws ClassNotFoundException {
         //Registar o Driver JDBC
-        SERVIDOR = dataBaseAddr;
-        URL_BD = "jdbc:mysql://" + SERVIDOR;
+
         Class.forName(JDBC_DRIVER);
+        SERVIDOR = dataBaseAddr;
+        SERVIDOR = "localhost:3306";
+        URL_BD = "jdbc:mysql://" + SERVIDOR + "/" + NOME_BD;
 
     }
 

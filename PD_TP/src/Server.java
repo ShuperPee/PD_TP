@@ -12,8 +12,6 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Server {
 
@@ -23,17 +21,20 @@ public class Server {
         InetAddress Addr;
         int Port;
         ServerSocket serverSocket = null;
-        boolean toQuit = false;
         ObjectInputStream in;
         ObjectOutputStream out;
         Socket socketToClient;
         InitClient initData = null;
         DataBaseConnect DataBase = null;
         Chat chat = new Chat();
-        if (args.length != 2) {
-            System.out.println("Sintaxe: java Server DataBase_addr:port Server_port");
-            return;
-        }
+        boolean toQuit = false;
+//        if (args.length != 2) {
+//            System.out.println("Sintaxe: java Server DataBase_addr:port Server_port");
+//            return;
+//        }
+        args = new String[2];
+        args[0] = "127.0.0.1";
+        args[1] = "2500";
         try {
             Addr = InetAddress.getByName(args[0]);
             Port = Integer.parseInt(args[1]);
@@ -97,7 +98,7 @@ public class Server {
                     }
 
                 } catch (IOException e) {
-                    if (toQuit) {
+                    if (!toQuit) {
                         return;
                     }
                     System.out.println("Ocorreu uma excepcao no socket enquanto aguardava por um pedido de ligação: \n" + e);
@@ -119,6 +120,7 @@ public class Server {
             try {
                 serverSocket.close();
             } catch (IOException e) {
+
             }
         }
     }
@@ -250,7 +252,20 @@ class ProcessTCPClient extends Thread {
                 DataBase.addDownload((Download) oData);
                 //Call Update?
             }
+            if (oData instanceof List) {
+                List<String>[] filelist = (List<String>[]) oData;
+                List<String>[] filelistDb = DataBase.getClientFiles(socketToClient.getInetAddress().toString());
+                int i = 0;
+                if (filelist.length != filelistDb.length) {
+                    //Atualizar Ficheiros
+                }
+                for (String str : filelist[0]) {
+                    if (str.equals(filelistDb[0].get(i)) && filelist[1].get(i).equals(filelistDb[1].get(i))) {
 
+                    }
+                    i++;
+                }
+            }
         } catch (Exception ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);

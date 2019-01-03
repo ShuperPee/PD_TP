@@ -1,13 +1,13 @@
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Observable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Client extends Observable {
 
@@ -30,9 +28,12 @@ public class Client extends Observable {
     private File localDirectory;
     private String username;
     private String password;
+    public ProcessServer processServer;
+    private Object oData;
     public static final String DATA = "ack";
     public static final int FILE_CHUNK = 5000;
     public static final int TIMEOUT = 5000;
+    public boolean quit;
 
     public Client(InetAddress Addr, int Port, File localDirectory) throws IOException {
         this.Addr = Addr;
@@ -41,6 +42,7 @@ public class Client extends Observable {
         this.server = new Socket(Addr, Port);
         in = new ObjectInputStream(server.getInputStream());
         out = new ObjectOutputStream(server.getOutputStream());
+        quit = false;
     }
 
     public boolean doLogin(String username, String password) {
@@ -48,12 +50,23 @@ public class Client extends Observable {
         ficheiros = getLocalFiles();
         InitClient client = new InitClient(username, password, Addr.toString(), ficheiros);
         try {
-            out.writeObject(client);
+            synchronized (oData) {
+                out.writeObject(client);
+                oData = in.readObject();
+                if (((String) oData).equals(("SuccessLogin"))) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
         }
-        return true;
+        return false;
     }
 
     public boolean register(String username, String password) {
@@ -61,12 +74,23 @@ public class Client extends Observable {
         ficheiros = getLocalFiles();
         RegisterClient client = new RegisterClient(username, password, Addr.toString(), ficheiros);
         try {
-            out.writeObject(client);
+            synchronized (oData) {
+                out.writeObject(client);
+                oData = in.readObject();
+                if (((String) oData).equals(("SuccessLogin"))) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
         }
-        return true;
+        return false;
     }
 
     public void sendMsg(String msg) {
@@ -103,89 +127,6 @@ public class Client extends Observable {
         Download download = new Download(Filename, client_up, Addr.toString(), Calendar.getInstance());
         try {
             out.writeObject(download);
-        } catch (IOException ex) {
-            System.out.println("Erro - " + ex);
-            System.exit(1);
-        }
-    }
-
-    public void InputServer() {
-        //Temporário só para esquematizar
-        Object oData;
-        while (true) {
-            try {
-                oData = in.readObject();
-                if (oData instanceof Chat) {
-                    //Display  Chat na interface
-                    List<String>[] files = (ArrayList<String>[]) oData;
-                    setChanged();
-                    notifyObservers(((Chat) oData).getMsgs());
-                }
-                if (oData instanceof List) {
-                    if (((List) oData).get(0) instanceof Download) {
-                        List<String> downloads = new ArrayList<>();
-                        for (Download i : (List<Download>) oData) {
-                            downloads.add(i.toString());
-                        }
-                        setChanged();
-                        notifyObservers(downloads);
-                    }
-                    if (((List) oData).get(0) instanceof String[]) {
-                        //Display Files na interface
-                        //[0] = name
-                        //[1] = size
-                        setChanged();
-                        List<String>[] files = (ArrayList<String>[]) oData;
-                        List<String> showStrings = new ArrayList<>();
-                        int i = 0;
-                        for (String j : files[0]) {
-                            showStrings.add(j);
-                            showStrings.add(files[1].get(i));
-                            i++;
-                        }
-                        notifyObservers(showStrings);
-                    }
-                }
-                if (oData instanceof String[]) {
-                    //Connection Peer to Peer
-                    //[0]ClientAddr String
-                    //[1]Port String
-                    //[2]File name
-                    String[] P2P = (String[]) oData;
-                    //Fazer isto numa thread!
-                    requestFile(P2P[2], localDirectory, Integer.parseInt(P2P[1]), P2P[0]);
-                }
-            } catch (IOException ex) {
-                System.out.println("Erro - " + ex);
-                System.exit(1);
-            } catch (ClassNotFoundException ex) {
-                System.out.println("Erro - " + ex);
-                System.exit(1);
-            } catch (Exception ex) {
-                System.out.println("Erro - " + ex);
-                System.exit(1);
-            }
-        }
-    }
-
-    public void OutputServer() {
-        String FileName = "";
-        ChatMsg Msg = new ChatMsg("Username", "Olá");
-        Download download = new Download("FileName", "Ip do que fez upload", Addr.toString(), Calendar.getInstance());
-        //InitClient newclient = new Initclient("username","password","ClientAddr"
-        try {
-            //Pedir um ficheiro
-            out.writeObject(FileName);
-            //Recebe um String[] no input
-
-            //Enviar Mensagem ao servidor
-            out.writeObject(Msg);
-
-            //Acabei de fazer um download
-            out.writeObject(download);
-
-            //Fazer login
-            //out.writeObject(newclient);
         } catch (IOException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -287,13 +228,34 @@ public class Client extends Observable {
         }
     }
 
-    public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
-            return;
+    public void startProcessServer() {
+        new ProcessServer().start();
+        try {
+            new ProcessUDP().start();
+        } catch (SocketException ex) {
+            System.out.println("Erro - " + ex);
+            System.exit(1);
         }
+    }
+
+    public void quit() {
+        quit = true;
+    }
+
+    public static void main(String[] args) {
+//        if (args.length != 3) {
+//            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
+//            return;
+//        }
+        args = new String[3];
+        args[0] = "127.0.0.1";
+        args[1] = "2500";
+        args[2] = "C:\\Temp";
         try {
             Client client = new Client(InetAddress.getByName(args[0]), Integer.parseInt(args[1]), new File(args[2]));
+            TextUI textUI = new TextUI(client);
+            client.startProcessServer();
+            textUI.ui();
         } catch (UnknownHostException ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -304,20 +266,106 @@ public class Client extends Observable {
 
     }
 
-    public String getUsername() {
-        return username;
+    class ProcessServer extends Thread {
+
+        public ProcessServer() {
+        }
+
+        @Override
+        public void run() {
+            while (!quit) {
+                try {
+                    out.writeObject(getLocalFiles());
+                    oData = in.readObject();
+                    if (oData instanceof Chat) {
+                        //Display  Chat na interface
+                        List<String>[] files = (ArrayList<String>[]) oData;
+                        setChanged();
+                        notifyObservers(((Chat) oData).getMsgs());
+                    }
+                    if (oData instanceof List) {
+                        if (((List) oData).get(0) instanceof Download) {
+                            List<String> downloads = new ArrayList<>();
+                            for (Download i : (List<Download>) oData) {
+                                downloads.add(i.toString());
+                            }
+                            setChanged();
+                            notifyObservers(downloads);
+                        }
+                        if (((List) oData).get(0) instanceof String[]) {
+                            //Display Files na interface
+                            //[0] = name
+                            //[1] = size
+                            setChanged();
+                            List<String>[] files = (ArrayList<String>[]) oData;
+                            List<String> showStrings = new ArrayList<>();
+                            int i = 0;
+                            for (String j : files[0]) {
+                                showStrings.add(j);
+                                showStrings.add(files[1].get(i));
+                                i++;
+                            }
+                            notifyObservers(showStrings);
+                        }
+                    }
+                    if (oData instanceof String[]) {
+                        //Connection Peer to Peer
+                        String[] P2P = (String[]) oData;
+                        new ProcessrequestFile(P2P[2], Integer.parseInt(P2P[1]), P2P[0]).start();
+
+                    }
+                } catch (IOException ex) {
+                    System.out.println("Erro - " + ex);
+                    System.exit(1);
+                } catch (ClassNotFoundException ex) {
+                    System.out.println("Erro - " + ex);
+                    System.exit(1);
+                } catch (Exception ex) {
+                    System.out.println("Erro - " + ex);
+                    System.exit(1);
+                }
+            }
+        }
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    class ProcessUDP extends Thread {
+
+        public DatagramSocket socket;
+        public DatagramPacket packet;
+
+        public ProcessUDP() throws SocketException {
+            socket = new DatagramSocket(Port);
+        }
+
+        @Override
+        public void run() {
+            while (!quit) {
+                try {
+                    socket.receive(packet);
+                    packet = new DatagramPacket(DATA.getBytes(), DATA.length(), Addr, Port);
+                    socket.send(packet);
+                } catch (IOException ex) {
+                    System.out.println("Erro - " + ex);
+                }
+            }
+
+        }
     }
 
-    public String getPassword() {
-        return password;
-    }
+    class ProcessrequestFile extends Thread {
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+        private String Filename;
+        private String clientAddr;
+        private int PORT;
 
+        public ProcessrequestFile(String Filename, int PORT, String clientAddr) {
+            this.Filename = Filename;
+            this.PORT = PORT;
+        }
+
+        @Override
+        public void run() {
+            requestFile(Filename, localDirectory, PORT, clientAddr);
+        }
+    }
 }
