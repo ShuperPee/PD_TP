@@ -79,6 +79,7 @@ public class Server {
                                     if (DataBase.addClient(initData)) {
                                         out = new ObjectOutputStream(socketToClient.getOutputStream());
                                         out.writeObject("SuccessLogin");
+                                        out.flush();
                                         new ProcessTCPClient(socketToClient, DataBase, chat).start();
                                         break InitClient;
                                     }
@@ -88,11 +89,13 @@ public class Server {
                         }
                         out = new ObjectOutputStream(socketToClient.getOutputStream());
                         out.writeObject("RejectedLogin");
+                        out.flush();
                     } else if (oData instanceof RegisterClient) {
                         InitClient client = new InitClient((RegisterClient) oData);
                         if (DataBase.addClient(client)) {
                             out = new ObjectOutputStream(socketToClient.getOutputStream());
                             out.writeObject("SuccessRegister");
+                            out.flush();
                             new ProcessTCPClient(socketToClient, DataBase, chat).start();
                         }
                     }
@@ -226,6 +229,7 @@ class ProcessTCPClient extends Thread {
             out.writeObject(DataBase.getFiles());
             out.writeObject(chat);
             out.writeObject(DataBase.getDownloads(socketToClient.getInetAddress().toString()));
+            out.flush();
         } catch (Exception ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);
@@ -240,11 +244,13 @@ class ProcessTCPClient extends Thread {
                 //Enviar Ip do Cliente/Porto do cliente que contem o ficheiro
                 //Call Update?
                 out.writeObject(ClientAddr);
+                out.flush();
             }
             //Cliente quer enviar uma mensagem
             if (oData instanceof ChatMsg) {
                 chat.addMsg((ChatMsg) oData);
                 out.writeObject(chat);
+                out.flush();
                 //Call Update?
             }
             //Cliente fez um download

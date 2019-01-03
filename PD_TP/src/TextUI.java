@@ -80,12 +80,14 @@ public class TextUI implements Observer {
                     sucess = client.doLogin(username, password);
 
                     if (sucess == true) {
-                        System.out.println("Registo efetuado com sucesso!");
+                        System.out.println("Login efetuado com sucesso!");
+                        uiLogin();
                     } else {
-                        System.out.println("Registo falhou!");
+                        System.out.println("Login falhou!");
+                        return;
                     }
-
                     return;
+                    
 
                 default:
                     return;
