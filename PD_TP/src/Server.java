@@ -248,11 +248,13 @@ class ProcessTCPClient extends Thread {
                 //Enviar Ip do Cliente/Porto do cliente que contem o ficheiro
                 //Call Update?
                 out.writeObject(ClientAddr);
+                out.flush();
             }
             //Cliente quer enviar uma mensagem
             if (oData instanceof ChatMsg) {
                 chat.addMsg((ChatMsg) oData);
                 out.writeObject(chat);
+                out.flush();
                 //Call Update?
             }
             //Cliente fez um download
