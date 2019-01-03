@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Server {
 
-    public static final int TIMEOUT = 5; //segundos
+    public static final int TIMEOUT = 5000; //segundos
 
     public static void main(String[] args) {
         InetAddress Addr;
@@ -33,7 +33,7 @@ public class Server {
 //            return;
 //        }
         args = new String[2];
-        args[0] = "127.0.0.1";
+        args[0] = "192.168.0.238";
         args[1] = "2500";
         try {
             Addr = InetAddress.getByName(args[0]);
