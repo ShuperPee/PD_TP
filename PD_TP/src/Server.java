@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Server {
 
-    public static final int TIMEOUT = 5; //segundos
+    public static final int TIMEOUT = 5000; //segundos
 
     public static void main(String[] args) {
         InetAddress Addr;
@@ -33,7 +33,7 @@ public class Server {
 //            return;
 //        }
         args = new String[2];
-        args[0] = "127.0.0.1";
+        args[0] = "192.168.0.238";
         args[1] = "2500";
         try {
             Addr = InetAddress.getByName(args[0]);
@@ -79,6 +79,7 @@ public class Server {
                                     if (DataBase.addClient(initData)) {
                                         out = new ObjectOutputStream(socketToClient.getOutputStream());
                                         out.writeObject("SuccessLogin");
+                                        out.flush();
                                         new ProcessTCPClient(socketToClient, DataBase, chat).start();
                                         break InitClient;
                                     }
@@ -88,11 +89,13 @@ public class Server {
                         }
                         out = new ObjectOutputStream(socketToClient.getOutputStream());
                         out.writeObject("RejectedLogin");
+                        out.flush();
                     } else if (oData instanceof RegisterClient) {
                         InitClient client = new InitClient((RegisterClient) oData);
                         if (DataBase.addClient(client)) {
                             out = new ObjectOutputStream(socketToClient.getOutputStream());
                             out.writeObject("SuccessRegister");
+                            out.flush();
                             new ProcessTCPClient(socketToClient, DataBase, chat).start();
                         }
                     }
@@ -226,6 +229,7 @@ class ProcessTCPClient extends Thread {
             out.writeObject(DataBase.getFiles());
             out.writeObject(chat);
             out.writeObject(DataBase.getDownloads(socketToClient.getInetAddress().toString()));
+            out.flush();
         } catch (Exception ex) {
             System.out.println("Erro - " + ex);
             System.exit(1);

@@ -32,16 +32,20 @@ public class Client extends Observable {
     private Object oData;
     public static final String DATA = "ack";
     public static final int FILE_CHUNK = 5000;
-    public static final int TIMEOUT = 5000;
+    public static final int TIMEOUT = 50000;
     public boolean quit;
 
     public Client(InetAddress Addr, int Port, File localDirectory) throws IOException {
         this.Addr = Addr;
         this.Port = Port;
         this.localDirectory = localDirectory;
+        System.out.println("E1");
         this.server = new Socket(Addr, Port);
-        in = new ObjectInputStream(server.getInputStream());
+        System.out.println("E2");
         out = new ObjectOutputStream(server.getOutputStream());
+        System.out.println("E3");
+        in = new ObjectInputStream(server.getInputStream());
+        System.out.println("E4");
         quit = false;
     }
 
@@ -243,15 +247,12 @@ public class Client extends Observable {
     }
 
     public static void main(String[] args) {
-//        if (args.length != 3) {
-//            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
-//            return;
-//        }
-        args = new String[3];
-        args[0] = "127.0.0.1";
-        args[1] = "2500";
-        args[2] = "C:\\Temp";
+        if (args.length != 3) {
+            System.out.println("Sintaxe: java Client Server_addr Server_port Dir");
+            return;
+        }
         try {
+
             Client client = new Client(InetAddress.getByName(args[0]), Integer.parseInt(args[1]), new File(args[2]));
             TextUI textUI = new TextUI(client);
             client.startProcessServer();
@@ -269,6 +270,7 @@ public class Client extends Observable {
     class ProcessServer extends Thread {
 
         public ProcessServer() {
+
         }
 
         @Override
