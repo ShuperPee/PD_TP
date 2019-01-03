@@ -32,4 +32,12 @@ public class Download implements Serializable {
     public Calendar getTime() {
         return time;
     }
+
+    public String getStringTime() {
+        return "[" + time.get(Calendar.HOUR_OF_DAY) + ":" + time.get(Calendar.MINUTE) + ":" + time.get(Calendar.SECOND) + "] ";
+    }
+
+    public String toString() {
+        return "Ficheiro: " + file + " Uploader: " + client_up + " Downloader:" + client_down + "Time: " + getStringTime();
+    }
 }
